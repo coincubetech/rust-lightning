@@ -1382,6 +1382,13 @@ impl Readable for CommitmentTransaction {
 			(14, _legacy_deserialization_prevention_marker, option),
 			(15, channel_type_features, option),
 		});
+		// The marker is never read, so its `None` initialiser fell back to
+		// `Option<!>` under never-type fallback, which rustc now rejects
+		// (rust-lang/rust#148922). Pin it to `Option<()>`, the type the
+		// `Writeable` side and the `HolderCommitmentTransaction` reader use.
+		// Upstream fixed this in 0.1 with `(option, explicit_type: ())`.
+		let _legacy_deserialization_prevention_marker: Option<()> =
+			_legacy_deserialization_prevention_marker;
 
 		let mut additional_features = ChannelTypeFeatures::empty();
 		additional_features.set_anchors_nonzero_fee_htlc_tx_required();
