@@ -1,14 +1,20 @@
 name: SemVer checks
 on:
-  push:
-    branches-ignore:
-      - master
   pull_request:
-    branches-ignore:
-      - master
-
+    branches:
+      - main
+      - redesign
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - edited
+      - converted_to_draft
+  workflow_dispatch:
 jobs:
   semver-checks:
+    if: ${{ (github.event_name != 'pull_request' || (!github.event.pull_request.draft && (github.event.action != 'edited' || github.event.changes.base != null))) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
@@ -25,3 +31,6 @@ jobs:
         run: cargo semver-checks
       - name: Check SemVer without any non-default features
         run: cargo semver-checks --only-explicit-features
+concurrency:
+  group: batch-${{ github.workflow }}-${{ github.ref }}-${{ github.event.action == 'edited' && github.event.changes.base == null && github.run_id || 'candidate' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
